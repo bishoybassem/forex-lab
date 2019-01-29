@@ -1,8 +1,14 @@
+"""This module offers utilities that prepare the forex data for the backtest module. The currencies/pairs that are
+going to be utilized are configured in forex.config module, in addition to the data path, where files are going to be
+written to.
+"""
+
 import requests
 import re
 import os
 import zipfile
-from forex.config import DATA_PATH, PAIRS
+import logging
+import forex.config as cfg
 
 
 HIST_DATA_URL = 'http://www.histdata.com/download-free-forex-historical-data/?/ascii/1-minute-bar-quotes/{}/{}'
@@ -20,17 +26,19 @@ def year_month(year, month=None, sep=''):
 
 
 def create_data_directory(pair):
-    output_path = os.path.join(DATA_PATH, pair_string(pair))
+    output_path = os.path.join(cfg.DATA_PATH, pair_string(pair))
     if not os.path.exists(output_path):
         os.makedirs(output_path)
 
 
 def get_archive_path(pair, year, month=None):
-    return os.path.join(DATA_PATH, pair_string(pair), '{}.zip'.format(year_month(year, month)))
+    return os.path.join(cfg.DATA_PATH, pair_string(pair), '{}.zip'.format(year_month(year, month)))
 
 
 def download_hist_data(pair, year, month=None):
-    print('Downloading', pair, 'data for', year, month)
+    """Downloads historical data from histdata.com given the pair, year and month (optional)."""
+
+    logging.info('Downloading %s data for %s %s', pair, year, month)
     url = HIST_DATA_URL.format(pair_string(pair), year_month(year, month, sep='/'))
     response = requests.get(url)
     assert response.status_code == 200
@@ -50,10 +58,12 @@ def download_hist_data(pair, year, month=None):
 
 
 def get_prices(pair, year, month=None):
+    """Retrieves the historical data given the pair, year and month (optional)."""
+
     create_data_directory(pair)
     archive_path = get_archive_path(pair, year, month)
     if os.path.exists(archive_path):
-        print(archive_path, 'already exists, skipping download!')
+        logging.info('%s already exists, skipping download!', archive_path)
     else:
         download_hist_data(pair, year, month)
 
@@ -65,15 +75,17 @@ def get_prices(pair, year, month=None):
 
 
 def merge_all_pairs(year, month=None):
+    """Merges the prices of all pairs into one entry per timestamp."""
+
     all_prices_dict = {}
-    for i in range(len(PAIRS)):
-        price_entries = get_prices(PAIRS[i], year, month)
+    for i in range(len(cfg.PAIRS)):
+        price_entries = get_prices(cfg.PAIRS[i], year, month)
         for entry in price_entries:
             parts = entry.split(';')
             timestamp = parts[0]
             close_price = parts[-2]
             if timestamp not in all_prices_dict:
-                all_prices_dict[timestamp] = [None] * len(PAIRS)
+                all_prices_dict[timestamp] = [None] * len(cfg.PAIRS)
             all_prices_dict[timestamp][i] = close_price
 
     timestamps = list(all_prices_dict.keys())
@@ -88,11 +100,13 @@ def fill_gaps(entries):
                 entries[i][j] = entries[i - 1][j]
 
 
-def merge_all_pairs_to_file(file_name, year, month=None):
+def merge_all_pairs_to_file(file_path, year, month=None):
+    """Writes the merged prices of all pairs to file given a year and month (optional)."""
+
     merged_entries = merge_all_pairs(year, month)
     fill_gaps(merged_entries)
-    print('Adding merged pair prices for', year, month, 'to', file_name)
-    with open(file_name, 'a') as file:
+    logging.info('Adding merged pair prices for %s %s to %s', year, month, file_path)
+    with open(file_path, 'a') as file:
         for entry in merged_entries:
             if None not in entry:
                 file.write(';'.join(entry))
@@ -100,9 +114,11 @@ def merge_all_pairs_to_file(file_name, year, month=None):
 
 
 def prepare_data(from_year, to_year, to_month=None):
-    out_file = os.path.join(DATA_PATH, '{}_{}'.format(year_month(from_year), year_month(to_year, to_month)))
+    """Writes the merged prices of all pairs to file given a date range."""
+
+    out_file = os.path.join(cfg.DATA_PATH, '{}_{}'.format(year_month(from_year), year_month(to_year, to_month)))
     if os.path.exists(out_file):
-        print(out_file, 'already exists, skipping generation!')
+        logging.info('%s already exists, skipping generation!', out_file)
         return
 
     for year in range(from_year, to_year):
@@ -113,4 +129,5 @@ def prepare_data(from_year, to_year, to_month=None):
 
 
 if __name__ == "__main__":
+    cfg.enable_logs()
     prepare_data(2015, 2019)
