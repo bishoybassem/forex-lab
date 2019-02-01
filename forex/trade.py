@@ -6,6 +6,12 @@ class Trade:
     TYPE_SELL = 'SELL'
 
     def __init__(self, pair, price, trade_type, amount):
+        """
+        :param pair: The currency tuple, e.g. ('EUR','USD')
+        :param price: The price the trade was opened at.
+        :param trade_type: Either 'SELL' or 'BUY'.
+        :param amount: The amount of money invested in this trade.
+        """
         self._pair = pair
         self._price = price
         self._trade_type = trade_type
@@ -66,9 +72,13 @@ class Trade:
         self._stop_loss_price = stop_loss_price
 
     def current_value(self, current_price):
-        percentage_change = (current_price - self._price) / self._price
-        sign = 1 if self.is_buy else -1
-        return (1 + (sign * percentage_change)) * self._amount
+        """ Returns the amount the trade is worth, given the current price of the forex pair."""
+
+        if self.is_buy:
+            percentage_change = (current_price - self._price) / self._price
+        else:
+            percentage_change = (self._price - current_price) / current_price
+        return (1 + percentage_change) * self._amount
 
     def __str__(self):
         return '-> {} {} {{price={}, take_profit_price={}, stop_loss_price={}}}'\
