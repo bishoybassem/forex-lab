@@ -21,7 +21,8 @@ class Account:
     def trades_list(self):
         return self._trades.copy().values()
 
-    def create_trade(self, pair, price, trade_type, amount, take_profit_price=None, stop_loss_price=None):
+    def open_trade(self, pair, price, trade_type, amount, take_profit_price=None, stop_loss_price=None):
+        """Creates a trade with the specified params, and updates the account's balance accordingly."""
         if self._balance - amount < 0:
             raise RuntimeError('Cannot proceed, balance is negative!')
 
@@ -38,6 +39,9 @@ class Account:
         return trade_id, trade
 
     def close_trade(self, trade_id, current_price):
+        """
+        Closes a trade, given it's id and current price, and updates the account's balance and statistics accordingly.
+        """
         trade = self._trades[trade_id]
         restored_amount = trade.current_value(current_price)
         del self._trades[trade_id]
@@ -51,6 +55,10 @@ class Account:
         return outcome
 
     def auto_close_trades(self, current_prices):
+        """
+        Closes the open trades in case their take profit/stop loss price thresholds are met based on
+        the specified current prices.
+        """
         result = []
         for trade_id, trade in self._trades.copy().items():
             price = current_prices[trade.pair]
@@ -64,6 +72,10 @@ class Account:
         return result
 
     def net_balance_summary(self, current_prices):
+        """
+        Returns the net worth of the account, composed of the remaining balance and the open trades' value based on the
+        specified current prices. The returned summary also includes trade statistics like number of wins and losses.
+        """
         net_balance = self._balance
         for trade in self._trades.values():
             net_balance += trade.current_value(current_prices[trade.pair])
