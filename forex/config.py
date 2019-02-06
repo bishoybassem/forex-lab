@@ -4,7 +4,10 @@ import sys
 
 DATA_PATH = '../data'
 CURRENCIES = ['eur', 'gbp', 'aud', 'nzd', 'usd', 'cad', 'chf', 'jpy']
-PAIRS = list(itertools.combinations(CURRENCIES, 2))
+
+
+def pairs():
+    return list(itertools.combinations(CURRENCIES, 2))
 
 
 def enable_logs(level=logging.INFO):

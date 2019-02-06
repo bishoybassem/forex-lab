@@ -12,6 +12,7 @@ class Trade:
         :param trade_type: Either 'SELL' or 'BUY'.
         :param amount: The amount of money invested in this trade.
         """
+
         self._pair = pair
         self._price = price
         self._trade_type = trade_type

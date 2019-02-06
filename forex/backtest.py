@@ -1,12 +1,11 @@
-import os
-from forex.config import DATA_PATH, PAIRS
+import forex.config as cfg
 from forex.account import Account
 
 
 class Backtest:
 
-    def __init__(self, prices_filename, balance, strategy):
-        self.prices_filename = prices_filename
+    def __init__(self, prices_file, balance, strategy):
+        self.prices_file = prices_file
         self.account = Account(balance)
         self.strategy = strategy
 
@@ -20,14 +19,15 @@ class Backtest:
         return timestamp, values
 
     def start(self):
-        with open(os.path.join(DATA_PATH, self.prices_filename)) as file:
+        pairs = cfg.pairs()
+        with open(self.prices_file) as file:
             while True:
                 current_line = file.readline()
                 if not current_line:
                     break
 
-                timestamp, prices = self.__class__.parse_entry(current_line, len(PAIRS) + 1)
-                prices_dict = {PAIRS[i]: prices[i] for i in range(len(PAIRS))}
+                timestamp, prices = self.__class__.parse_entry(current_line, len(pairs) + 1)
+                prices_dict = {pairs[i]: prices[i] for i in range(len(pairs))}
 
                 results = self.account.auto_close_trades(prices_dict)
                 for trade_id, outcome in results:

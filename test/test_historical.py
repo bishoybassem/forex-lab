@@ -42,8 +42,9 @@ class TestModuleFunctions(unittest.TestCase):
         prices_pair2 = ['20180101 170000;a;b;c;d;0',
                         '20180102 170000;e;f;g;h;0',
                         '20180106 180000;i;j;k;l;0']
-        with mock.patch('forex.config.PAIRS', [1, 2]), mock.patch('forex.historical.get_prices',
-                                                                  side_effect=[prices_pair1, prices_pair2]):
+        with mock.patch('forex.config.pairs', return_value=[1, 2]), \
+             mock.patch('forex.historical.get_prices', side_effect=[prices_pair1, prices_pair2]):
+
             expected = [
                 ['20180101 170000', '4', 'd'],
                 ['20180102 170000', None, 'h'],

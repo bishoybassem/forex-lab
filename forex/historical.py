@@ -8,6 +8,7 @@ import re
 import os
 import zipfile
 import logging
+import hashlib
 import forex.config as cfg
 
 
@@ -77,15 +78,16 @@ def get_prices(pair, year, month=None):
 def merge_all_pairs(year, month=None):
     """Merges the prices of all pairs into one entry per timestamp."""
 
+    pairs = cfg.pairs()
     all_prices_dict = {}
-    for i in range(len(cfg.PAIRS)):
-        price_entries = get_prices(cfg.PAIRS[i], year, month)
+    for i in range(len(pairs)):
+        price_entries = get_prices(pairs[i], year, month)
         for entry in price_entries:
             parts = entry.split(';')
             timestamp = parts[0]
             close_price = parts[-2]
             if timestamp not in all_prices_dict:
-                all_prices_dict[timestamp] = [None] * len(cfg.PAIRS)
+                all_prices_dict[timestamp] = [None] * len(pairs)
             all_prices_dict[timestamp][i] = close_price
 
     timestamps = list(all_prices_dict.keys())
@@ -116,16 +118,23 @@ def merge_all_pairs_to_file(file_path, year, month=None):
 def prepare_data(from_year, to_year, to_month=None):
     """Writes the merged prices of all pairs to file given a date range."""
 
-    out_file = os.path.join(cfg.DATA_PATH, '{}_{}'.format(year_month(from_year), year_month(to_year, to_month)))
+    currencies_hash = hashlib.md5(','.join(cfg.CURRENCIES).encode('utf-8')).hexdigest()
+    out_dir = os.path.join(cfg.DATA_PATH, currencies_hash)
+    if not os.path.exists(out_dir):
+        os.makedirs(out_dir)
+
+    out_file = os.path.join(out_dir, '{}_{}'.format(year_month(from_year), year_month(to_year, to_month)))
     if os.path.exists(out_file):
         logging.info('%s already exists, skipping generation!', out_file)
-        return
+        return out_file
 
     for year in range(from_year, to_year):
         merge_all_pairs_to_file(out_file, year)
     if to_month is not None:
         for month in range(1, to_month):
             merge_all_pairs_to_file(out_file, to_year, month)
+
+    return out_file
 
 
 if __name__ == "__main__":
