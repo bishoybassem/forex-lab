@@ -138,5 +138,5 @@ def prepare_data(from_year, to_year, to_month=None):
 
 
 if __name__ == "__main__":
-    cfg.enable_logs()
+    cfg.configure_logs()
     prepare_data(2015, 2019)
