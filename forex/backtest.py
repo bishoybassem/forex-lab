@@ -11,9 +11,13 @@ class Backtest:
         :param balance: The initial balance to start with.
         :param strategy: The instance of the strategy to backtest (subclass of AbstractStrategy)
         """
-        self.prices_file = prices_file
-        self.account = Account(balance)
-        self.strategy = strategy
+        self._prices_file = prices_file
+        self._account = Account(balance)
+        self._strategy = strategy
+
+    @property
+    def account(self):
+        return self._account
 
     @staticmethod
     def parse_entry(entry):
@@ -28,7 +32,7 @@ class Backtest:
         """Starts the replay of historical data against the user-defined strategy"""
         
         pairs = cfg.pairs()
-        with open(self.prices_file) as file:
+        with open(self._prices_file) as file:
             while True:
                 current_line = file.readline()
                 if not current_line:
@@ -41,10 +45,10 @@ class Backtest:
 
                 prices_dict = {pairs[i]: prices[i] for i in range(len(pairs))}
 
-                results = self.account.auto_close_trades(prices_dict)
+                results = self._account.auto_close_trades(prices_dict)
                 for trade_id, outcome in results:
                     logging.debug('{} Closed t{} with {}'.format(timestamp, trade_id, outcome))
 
-                self.strategy.execute(self.account, timestamp, prices_dict)
+                self._strategy.execute(self._account, timestamp, prices_dict)
 
-        logging.info('Result: %s' % self.account.net_balance_summary(prices_dict))
+        logging.info('Result: %s' % self._account.net_balance_summary(prices_dict))

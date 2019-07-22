@@ -1,4 +1,5 @@
-"""This module offers utilities that prepare the forex data for the backtest module. The currencies/pairs that are
+"""
+This module offers utilities that prepare the forex data for the backtest module. The currencies/pairs that are
 going to be utilized are configured in forex.config module, in addition to the data path, where files are going to be
 written to.
 """
